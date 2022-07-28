@@ -1,0 +1,66 @@
+UH_ID,Site,Location,Variety,LocationVar,year,sample_date,Taster,Cocoa,Acidity,Bitterness,Astringency,Sweet,Fresh_Fruit,Browned_Fruit,Nutty,Floral,Woody,Spicy,Off_Flavors
+217,Site 02,Kualoa,3,Kualoa_3,2016,1,s,3,2,3,4,0,3,0,0,2,3,0,0
+217,Site 02,Kualoa,3,Kualoa_3,2016,1,j,5,3,5,5,3,2,4,3,0,5,0,0
+217,Site 02,Kualoa,3,Kualoa_3,2016,1,n,3,3.5,4.5,3,1.5,1.5,5,4.5,0,4.5,0,3
+218,Site 02,Kualoa,3,Kualoa_3,2016,2,s,3,2,5,4,0,3,2,3,2,4,0,3
+218,Site 02,Kualoa,3,Kualoa_3,2016,2,j,4.5,3,5,5,2,3,2,4,0,3,0,2
+218,Site 02,Kualoa,3,Kualoa_3,2016,2,n,3,3,6,6,0,2,3,5,3,5,0,5
+221,Site 02,Kualoa,5,Kualoa_5,2016,1,s,4,1,3,4,0,1,1,1,2,3,0,0
+221,Site 02,Kualoa,5,Kualoa_5,2016,1,j,4,2,4.5,5,0,0,1,4,0,4,0,0
+221,Site 02,Kualoa,5,Kualoa_5,2016,1,n,3.5,4,4,4,2,3,4,3,1.5,3,0,0
+222,Site 02,Kualoa,5,Kualoa_5,2016,2,s,4,1,5,4,0,0,2,3,2,5,0,0
+222,Site 02,Kualoa,5,Kualoa_5,2016,2,j,4,2,4,4,2,2,3,4,0,4,0,0
+222,Site 02,Kualoa,5,Kualoa_5,2016,2,n,4,4.5,4,3,0,2.5,4,3,0,3,0,0
+254,Site 04,Pearl City,3,Pearl City_3,2016,1,s,3,1,4,4,0,1,1,3,0,5,0,1
+254,Site 04,Pearl City,3,Pearl City_3,2016,1,j,3.5,2,6,5.5,0,0,0,4,0,4,0,4
+254,Site 04,Pearl City,3,Pearl City_3,2016,1,n,1,0,0,0,0,0,0,0,0,0,0,6.5
+255,Site 04,Pearl City,3,Pearl City_3,2016,2,s,2,1,4,4,0,0,0,2,0,3,0,1
+255,Site 04,Pearl City,3,Pearl City_3,2016,2,j,4,4,4,4,2,3,2,4,0,4,0,4
+255,Site 04,Pearl City,3,Pearl City_3,2016,2,n,3,2,4,4,1,1,1,3,0,4,0,7
+258,Site 04,Pearl City,5,Pearl City_5,2016,1,s,3,0,4,3,1,0,2,2,0,4,1,1
+258,Site 04,Pearl City,5,Pearl City_5,2016,1,j,4,3,4,4,3,4,3,5,0,4,0,0
+258,Site 04,Pearl City,5,Pearl City_5,2016,1,n,6.5,4,2.5,2.5,0,1,4,4,0,4,0,0
+259,Site 04,Pearl City,5,Pearl City_5,2016,2,s,4,3,1,2,0,0,1,2,2,3,0,0
+259,Site 04,Pearl City,5,Pearl City_5,2016,2,j,4.5,3,5,5,1,1,2,4,0,4,0,0
+259,Site 04,Pearl City,5,Pearl City_5,2016,2,n,5,4.8,4,4.5,1,2,3.5,4.5,0,4,0,4
+110,Site 02,Kualoa,3,Kualoa_3,2015,1,Skip,7,0,3,2,0,0,0,0,4,3,0,0
+110,Site 02,Kualoa,3,Kualoa_3,2015,1,Jason,4,1,7,5,0,0,0,0,3,4,2,0
+110,Site 02,Kualoa,3,Kualoa_3,2015,1,Nick ,5,3,2,4,2,0,3,5,0,3,0,0
+110,Site 02,Kualoa,3,Kualoa_3,2015,1,Juli,4,1.5,5,5,2,2,3,0,2,3,0,0
+110,Site 02,Kualoa,3,Kualoa_3,2015,1,Ed,6,0,5,7,0,0,0,0,7.7,2.7,0,0
+111,Site 02,Kualoa,3,Kualoa_3,2015,2,Skip,4,0,3,4,0,0,2,0,0,3,0,0
+111,Site 02,Kualoa,3,Kualoa_3,2015,2,Jason,5,2.5,4,2,0,0,0,0,3,0,0,0
+111,Site 02,Kualoa,3,Kualoa_3,2015,2,Nick ,3,0,6,6,0,0,3,3,6,6,0,0
+111,Site 02,Kualoa,3,Kualoa_3,2015,2,Juli,4,3,4.5,5,0,2,4,0,3,3,0,0
+111,Site 02,Kualoa,3,Kualoa_3,2015,2,Ed,7,2,4,5,0,1,3.7,0,0,0,0,4.4
+114,Site 02,Kualoa,5,Kualoa_5,2015,1,Skip,5,0,3,3,0,1,2,2,3,3,0,0
+114,Site 02,Kualoa,5,Kualoa_5,2015,1,Jason,6.5,0,5,4,0,1,1,2,0,1,0,0
+114,Site 02,Kualoa,5,Kualoa_5,2015,1,Nick ,6.5,2,4,3,0,2,2,0,0,0,0,0
+114,Site 02,Kualoa,5,Kualoa_5,2015,1,Juli,4,0,6,5,0,0,2,2,3,4,0,0
+114,Site 02,Kualoa,5,Kualoa_5,2015,1,Ed,7,0,4,4,0,0,0,0,0,2,0,0
+115,Site 02,Kualoa,5,Kualoa_5,2015,2,Skip,7,0,3,3,0,0,0,2,2,4,0,0
+115,Site 02,Kualoa,5,Kualoa_5,2015,2,Jason,3,2,3,7,0,0,1.5,1,0,0,0,0
+115,Site 02,Kualoa,5,Kualoa_5,2015,2,Nick ,4.5,3,3.5,3,0,4,2,0,0,0,2,0
+115,Site 02,Kualoa,5,Kualoa_5,2015,2,Juli,4,0,6,5,1,2,3,1,4,4,0,0
+115,Site 02,Kualoa,5,Kualoa_5,2015,2,Ed,8,0,3,3,0,0,2,0,0,4,0,0
+139,Site 04,Pearl City,2,Pearl City_2,2015,1,Skip,5,0,4,4,0,0,0,0,0,4,0,0
+139,Site 04,Pearl City,2,Pearl City_2,2015,1,Jason,5,2,5.5,2,0,0,0,0,0,3,0,0
+139,Site 04,Pearl City,2,Pearl City_2,2015,1,Nick ,5,2,3,4,1,2,2,3,4,4,0,0
+139,Site 04,Pearl City,2,Pearl City_2,2015,1,Juli,5,1,4,5,0,0,3,0,2,3,0,0
+139,Site 04,Pearl City,2,Pearl City_2,2015,1,Skip,3,1,4,2,0,2,2,0,0,3,0,0
+139,Site 04,Pearl City,2,Pearl City_2,2015,1,Jason,4,2,6,4,0,0,2,3,0,0,0,0
+139,Site 04,Pearl City,2,Pearl City_2,2015,1,Nick ,3.5,0,5,4,0,0,2,4.5,4,4,0,0
+139,Site 04,Pearl City,2,Pearl City_2,2015,1,Juli,6.5,0,4.5,4,0,0,0,0,0,4,0,0
+139,Site 04,Pearl City,2,Pearl City_2,2015,1,Ed,7,3,4,5,0,0,2.3,0,2.6,2,0,2
+140,Site 04,Pearl City,2,Pearl City_2,2015,2,Skip,4,0,3,2,0,0,0,0,3,2,0,0
+140,Site 04,Pearl City,2,Pearl City_2,2015,2,Jason,3,3,6,2,0,0,0,3,0,2,0,0
+140,Site 04,Pearl City,2,Pearl City_2,2015,2,Nick ,5,3,4,4.5,0,3,4,2,0,4,0,0
+140,Site 04,Pearl City,2,Pearl City_2,2015,2,Juli,6,2,5,5,0,2,4,2,2,4,0,0
+140,Site 04,Pearl City,2,Pearl City_2,2015,2,Ed,7,2,4,6,0,3.7,2.7,0,6.3,3.7,3,2
+145,Site 04,Pearl City,5,Pearl City_5,2015,1,Skip,6,0,2,2,0,0,0,2,3,3,0,0
+145,Site 04,Pearl City,5,Pearl City_5,2015,1,Jason,6,1,5,2,0,0,0,2,0,2,0,0
+145,Site 04,Pearl City,5,Pearl City_5,2015,1,Nick ,5.5,2.5,3,2,0,0,2,4,0,4,0,0
+145,Site 04,Pearl City,5,Pearl City_5,2015,1,Ed,8,0,3,3,0,0,0,0,0,4,0,0
+146,Site 04,Pearl City,5,Pearl City_5,2015,2,Skip,7,0,3,3,0,0,4,3,0,3,0,0
+146,Site 04,Pearl City,5,Pearl City_5,2015,2,Jason,3.5,3,6,2,0,2,0,0,0,0,0,0
+146,Site 04,Pearl City,5,Pearl City_5,2015,2,Nick ,4.5,4,2.5,3,2,3,2,3,2,4,0,0

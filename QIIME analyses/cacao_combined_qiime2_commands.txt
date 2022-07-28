@@ -1,0 +1,1130 @@
+###QIIME2 commands used to process the data in this manuscript.
+###The data structure contains fungal ITS and bacterial 16S, sequenced on Illumina MiSeq on two separate runs so the two runs "a" and "b" were combined into a single dataset for further analyses.
+
+###Cacao_combined
+
+
+##############################
+###Cacao_a
+##############################
+
+
+cd cacao_combined/cacao_a
+
+mkdir imported_seqs
+mkdir metadata
+
+
+----------------------------
+#IMPORT MULTIPLEXED DATA
+----------------------------
+#IMPORT multiplexed sequence and barcode reads from a directory
+#Your "gz_data" directory should contain only three files: "forward.fastq.gz", "reverse.fastq.gz", and "barcodes.fastq.gz"
+qiime tools import \
+  --type EMPPairedEndSequences \
+  --input-path gz_data \
+  --output-path imported_seqs/imported-paired-end-seqs.qza
+
+#demux data
+
+mkdir demux
+
+qiime demux emp-paired \
+  --m-barcodes-file metadata/metadata_cacao_a.tsv \
+  --m-barcodes-column BarcodeSequence \
+  --i-seqs imported_seqs/imported-paired-end-seqs.qza \
+  --o-per-sample-sequences demux/demux.qza \
+  --o-error-correction-details demux/barcode-error-correction-details.qza \
+  --p-rev-comp-mapping-barcodes \
+  --p-no-golay-error-correction
+
+
+mkdir 16S
+
+mkdir 16S/trimmed_seqs
+
+#I used cutadapt in qiime2 for the following 16S primers 
+#515F (Parada)–806R (Apprill), amplicon length = 291 bp
+#FWD:GTGYCAGCMGCCGCGGTAA; REV:GGACTACNVGGGTWTCTAAT
+#Note that the p-adapter-f and p-adapter-r use the '...' to separate the primers as such...
+#fwd..reverse complement rev, and rev...reverse complement fwd
+
+
+qiime cutadapt trim-paired \
+  --i-demultiplexed-sequences demux/demux.qza \
+  --p-adapter-f '^GTGYCAGCMGCCGCGGTAA...ATTAGAWACCCBNGTAGTCC' \
+  --p-adapter-r '^GGACTACNVGGGTWTCTAAT...TTACCGCGGCKGCTGRCAC' \
+  --p-cores 4 \
+  --o-trimmed-sequences 16S/trimmed_seqs/trimmed-seqs-16S.qza \
+  --p-discard-untrimmed \
+  --p-overlap 10 \
+  --p-minimum-length 50 \
+  --verbose \
+  --p-error-rate 0.13 
+
+qiime demux summarize \
+  --i-data 16S/trimmed_seqs/trimmed-seqs-16S.qza \
+  --o-visualization 16S/trimmed_seqs/trimmed-seqs-16S.qzv
+
+qiime tools view 16S/trimmed_seqs/trimmed-seqs-16S.qzv
+
+
+
+mkdir 16S/dada2
+
+qiime dada2 denoise-paired \
+  --i-demultiplexed-seqs 16S/trimmed_seqs/trimmed-seqs-16S.qza \
+  --p-trim-left-f 0 \
+  --p-trunc-len-f  192 \
+  --p-trim-left-r 0 \
+  --p-trunc-len-r 140 \
+  --o-representative-sequences 16S/dada2/rep-seqs-16S.qza \
+  --o-table 16S/dada2/table-16S.qza \
+  --o-denoising-stats 16S/dada2/denoising-stats-16S.qza \
+  --p-n-threads 0 \
+  --p-n-reads-learn 1000000
+
+
+qiime metadata tabulate \
+  --m-input-file 16S/dada2/denoising-stats-16S.qza \
+  --o-visualization 16S/dada2/denoising-stats-16S.qzv
+  
+qiime tools view 16S/dada2/denoising-stats-16S.qzv
+
+qiime feature-table summarize \
+  --i-table 16S/dada2/table-16S.qza \
+  --o-visualization 16S/dada2/table-16S.qzv \
+  --m-sample-metadata-file metadata/metadata_cacao_a.tsv
+
+qiime tools view 16S/dada2/table-16S.qzv
+
+qiime feature-table tabulate-seqs \
+  --i-data 16S/dada2/rep-seqs-16S.qza \
+  --o-visualization 16S/dada2/rep-seqs-16S.qzv
+  
+qiime tools view 16S/dada2/rep-seqs-16S.qzv
+
+
+
+
+##############################
+###Cacao_b
+##############################
+
+cd cacao_combined/cacao_b
+
+mkdir imported_seqs
+mkdir metadata
+
+###I transferred the “demux” folder from previously imported data.
+
+
+qiime tools import \
+  --type 'SampleData[PairedEndSequencesWithQuality]' \
+  --input-path metadata/manifest.csv \
+  --input-format PairedEndFastqManifestPhred33 \
+  --output-path imported_seqs/imported-paired-end-seqs.qza
+
+qiime demux summarize \
+  --i-data imported_seqs/imported-paired-end-seqs.qza \
+  --o-visualization imported_seqs/demux.qzv
+
+qiime tools view imported_seqs/demux.qzv
+
+#################################################################################
+Initial Processing
+################################################################################
+
+mkdir 16S
+
+mkdir 16S/trimmed_seqs
+
+#I used cutadapt in qiime2 for the following 16S primers 
+#515F (Parada)–806R (Apprill), amplicon length = 291 bp
+#FWD:GTGYCAGCMGCCGCGGTAA; REV:GGACTACNVGGGTWTCTAAT
+#Note that the p-adapter-f and p-adapter-r use the '...' to separate the primers as such...
+#fwd..reverse complement rev, and rev...reverse complement fwd
+
+
+qiime cutadapt trim-paired \
+  --i-demultiplexed-sequences imported_seqs/imported-paired-end-seqs.qza \
+  --p-adapter-f '^GTGYCAGCMGCCGCGGTAA...ATTAGAWACCCBNGTAGTCC' \
+  --p-adapter-r '^GGACTACNVGGGTWTCTAAT...TTACCGCGGCKGCTGRCAC' \
+  --p-cores 4 \
+  --o-trimmed-sequences 16S/trimmed_seqs/trimmed-seqs-16S.qza \
+  --p-discard-untrimmed \
+  --p-overlap 10 \
+  --p-minimum-length 50 \
+  --verbose \
+  --p-error-rate 0.13 
+
+qiime demux summarize \
+  --i-data 16S/trimmed_seqs/trimmed-seqs-16S.qza \
+  --o-visualization 16S/trimmed_seqs/trimmed-seqs-16S.qzv
+
+qiime tools view 16S/trimmed_seqs/trimmed-seqs-16S.qzv
+
+
+mkdir 16S/dada2
+
+qiime dada2 denoise-paired \
+  --i-demultiplexed-seqs 16S/trimmed_seqs/trimmed-seqs-16S.qza \
+  --p-trim-left-f 0 \
+  --p-trunc-len-f  201 \
+  --p-trim-left-r 0 \
+  --p-trunc-len-r 140 \
+  --o-representative-sequences 16S/dada2/rep-seqs-16S.qza \
+  --o-table 16S/dada2/table-16S.qza \
+  --o-denoising-stats 16S/dada2/denoising-stats-16S.qza \
+  --p-n-threads 0 \
+  --p-n-reads-learn 1000000
+
+
+qiime metadata tabulate \
+  --m-input-file 16S/dada2/denoising-stats-16S.qza \
+  --o-visualization 16S/dada2/denoising-stats-16S.qzv
+  
+qiime tools view 16S/dada2/denoising-stats-16S.qzv
+
+
+
+qiime feature-table summarize \
+  --i-table 16S/dada2/table-16S.qza \
+  --o-visualization 16S/dada2/table-16S.qzv \
+  --m-sample-metadata-file metadata/cacao_metadata.tsv
+
+qiime tools view 16S/dada2/table-16S.qzv
+
+qiime feature-table tabulate-seqs \
+  --i-data 16S/dada2/rep-seqs-16S.qza \
+  --o-visualization 16S/dada2/rep-seqs-16S.qzv
+  
+qiime tools view 16S/dada2/rep-seqs-16S.qzv
+
+
+
+################################################
+Cacao Combined 16S
+################################################
+
+cd cacao_combined
+mkdir 16S
+mkdir 16S/tables
+
+qiime feature-table merge \
+  --i-tables cacao_b/16S/dada2/table-16S.qza \
+  --i-tables cacao_a/16S/dada2/table-16S.qza \
+  --o-merged-table 16S/tables/table_cacao_combined-16S.qza
+
+mkdir 16S/rep-seqs
+
+qiime feature-table merge-seqs \
+  --i-data cacao_b/16S/dada2/rep-seqs-16S.qza \
+  --i-data cacao_a/16S/dada2/rep-seqs-16S.qza \
+  --o-merged-data 16S/rep-seqs/rep-seqs-16S.qza
+
+qiime feature-table summarize \
+  --i-table 16S/tables/table_cacao_combined-16S.qza \
+  --o-visualization 16S/tables/table_cacao_combined-16S.qzv \
+  --m-sample-metadata-file metadata/cacao_metadata_combined.tsv
+
+qiime tools view 16S/tables/table_cacao_combined-16S.qzv
+
+mkdir 16S/taxonomy
+
+qiime feature-classifier classify-sklearn \
+  --i-classifier qiime_classifiers/silva-138-99-515-806-nb-classifier.qza \
+  --i-reads 16S/rep-seqs/rep-seqs-16S.qza \
+  --o-classification 16S/taxonomy/taxonomy-16S.qza
+
+
+#Connect your OTU data to taxonomy and create bar plots
+qiime metadata tabulate \
+  --m-input-file 16S/taxonomy/taxonomy-16S.qza \
+  --o-visualization 16S/taxonomy/taxonomy-16S.qzv
+
+qiime tools view 16S/taxonomy/taxonomy-16S.qzv
+
+
+qiime taxa barplot \
+  --i-table 16S/tables/table_cacao_combined-16S.qza \
+  --i-taxonomy 16S/taxonomy/taxonomy-16S.qza \
+  --m-metadata-file metadata/cacao_metadata_combined.tsv \
+  --o-visualization 16S/taxonomy/taxa-bar-plots-16S.qzv
+
+qiime tools view 16S/taxonomy/taxa-bar-plots-16S.qzv
+
+
+
+
+###QC
+
+mkdir 16S/filtered_tables
+
+qiime taxa filter-table \
+  --i-table 16S/tables/table_cacao_combined-16S.qza \
+  --i-taxonomy 16S/taxonomy/taxonomy-16S.qza \
+  --p-exclude Unassigned,mitochondria,chloroplast,Eukaryota \
+  --o-filtered-table 16S/filtered_tables/table-prok-only.qza
+  
+qiime feature-table summarize \
+  --i-table 16S/filtered_tables/table-prok-only.qza \
+  --o-visualization 16S/filtered_tables/table-prok-only.qzv \
+  --m-sample-metadata-file metadata/cacao_metadata_combined.tsv
+
+qiime tools view 16S/filtered_tables/table-prok-only.qzv
+
+
+#CREATE another taxa barplot for data exploration
+qiime taxa barplot \
+  --i-table 16S/filtered_tables/table-prok-only.qza \
+  --i-taxonomy 16S/taxonomy/taxonomy-16S.qza \
+  --m-metadata-file metadata/cacao_metadata_combined.tsv \
+  --o-visualization 16S/taxonomy/taxa_barplot_table-prok-only.qzv
+
+qiime tools view 16S/taxonomy/taxa_barplot_table-prok-only.qzv
+
+
+#Filter your rep-seqs so that you'll have a dataset to work with that is reflective of the filters
+#Use the resulting filtered rep-seqs in downstream analyses (especially phylogenetic analyses)
+
+mkdir 16S/filtered_seqs
+
+qiime feature-table filter-seqs \
+  --i-data 16S/rep-seqs/rep-seqs-16S.qza \
+  --i-table 16S/filtered_tables/table-prok-only.qza \
+  --o-filtered-data 16S/filtered_seqs/rep-seqs-prok-only.qza
+
+#further filter 
+
+qiime tools export \
+  --input-path 16S/taxonomy/taxonomy-16S.qza \
+  --output-path 16S/exported-taxonomy-16S
+
+cp 16S/exported-taxonomy-16S/taxonomy.tsv 16S/exported-taxonomy-16S/biom-taxonomy-16S.tsv
+
+
+cat 16S/exported-taxonomy-16S/biom-taxonomy-16S.tsv | tr "\\t" "," > 16S/exported-taxonomy-16S/biom-taxonomy-16S.csv
+
+new_header="#OTUID,taxonomy,confidence"
+sed -i '' "1s/.*/$new_header/" 16S/exported-taxonomy-16S/biom-taxonomy-16S.csv
+
+cat 16S/exported-taxonomy-16S/biom-taxonomy-16S.csv | tr "," "\\t" > 16S/exported-taxonomy-16S/biom-taxonomy-16S.tsv
+
+rm 16S/exported-taxonomy-16S/biom-taxonomy-16S.csv
+
+
+
+qiime tools export \
+  --input-path 16S/filtered_tables/table-prok-only.qza \
+  --output-path 16S/exported-table-prok
+
+#ADD metadata to the OTU table and convert it to tsv to view
+
+biom add-metadata \
+ -i 16S/exported-table-prok/feature-table.biom \
+ -o 16S/exported-table-prok/feature-table-with-taxonomy_prok_only.biom \
+ --observation-metadata-fp 16S/exported-taxonomy-16S/biom-taxonomy-16S.tsv \
+ --sc-separated taxonomy
+
+
+
+#CONVERT biom to tsv for analyses elsewhere
+biom convert \
+  -i 16S/exported-table-prok/feature-table-with-taxonomy_prok_only.biom \
+  -o 16S/exported-table-prok/feature-table-with-taxonomy_prok_only.tsv \
+  --to-tsv \
+  --process-obs-metadata taxonomy \
+  --header-key taxonomy
+
+#This is where you can decide to remove other OTUs or samples that did not pass other filtering steps
+#Samples could be removed using the options within "qiime feature-table XXX" or manual through the spreadsheet and then converted back into biom for further processign in QIIME.
+#Rick's notes: I looked at the spreadsheet and also the table summary and noticed sterile controls only had 1 OTU. I looked at the average sample per OTU as well, and given the nature of this preliminary study decided to keep OTUs with a frequency of 5.
+
+
+#REMOVE lower abundance OTUs and samples with minimal OTUs to reduce noise and increase computational efficiency
+# --p-min-samples = minimum number of samples that an OTU has to be found in to be kept
+# --p-min-frequency = The minimum total frequency that a feature must have to be retained.
+# --p-min-frequency = the minimum number of features that a sample must have to be retained.
+
+
+qiime tools view 16S/filtered_tables/table-prok-only.qzv
+
+
+qiime feature-table filter-features \
+  --i-table 16S/filtered_tables/table-prok-only.qza \
+  --p-min-frequency 10 \
+  --o-filtered-table 16S/filtered_tables/filtered1_table-prok-only.qza
+
+qiime feature-table summarize \
+  --i-table 16S/filtered_tables/filtered1_table-prok-only.qza \
+  --o-visualization 16S/filtered_tables/filtered1_table-prok-only.qzv \
+  --m-sample-metadata-file metadata/cacao_metadata_combined.tsv
+
+qiime tools view 16S/filtered_tables/filtered1_table-prok-only.qzv
+
+qiime feature-table filter-samples \
+  --i-table 16S/filtered_tables/filtered1_table-prok-only.qza \
+  --p-min-features 5 \
+  --o-filtered-table 16S/filtered_tables/filtered2_table-prok-only.qza
+
+
+qiime feature-table summarize \
+  --i-table 16S/filtered_tables/filtered2_table-prok-only.qza \
+  --o-visualization 16S/filtered_tables/filtered2_table-prok-only.qzv \
+  --m-sample-metadata-file metadata/cacao_metadata_combined.tsv
+
+qiime tools view 16S/filtered_tables/filtered2_table-prok-only.qzv
+
+qiime taxa barplot \
+  --i-table 16S/filtered_tables/filtered2_table-prok-only.qza \
+  --i-taxonomy 16S/taxonomy/taxonomy-16S.qza \
+  --m-metadata-file metadata/cacao_metadata_combined.tsv \
+  --o-visualization 16S/taxonomy/taxa_barplot_filtered2_table-prok-only.qzv
+
+qiime tools view 16S/taxonomy/taxa_barplot_filtered2_table-prok-only.qzv
+
+#Filter your rep-seqs so that you'll have a dataset to work with that is reflective of the filters
+#Use the resulting filtered rep-seqs in downstream analyses (especially phylogenetic analyses)
+
+
+qiime feature-table filter-seqs \
+  --i-data 16S/rep-seqs/rep-seqs-16S.qza \
+  --i-table 16S/filtered_tables/filtered2_table-prok-only.qza \
+  --o-filtered-data 16S/filtered_seqs/rep-seqs-filtered2_table-prok-only.qza
+
+
+qiime feature-table tabulate-seqs \
+  --i-data 16S/filtered_seqs/rep-seqs-filtered2_table-prok-only.qza \
+  --o-visualization 16S/filtered_seqs/rep-seqs-filtered2_table-prok-only.qzv
+
+qiime tools view 16S/filtered_seqs/rep-seqs-filtered2_table-prok-only.qzv
+
+####phylogeny
+
+mkdir 16S/phylogeny
+
+qiime phylogeny align-to-tree-mafft-fasttree \
+  --i-sequences 16S/filtered_seqs/rep-seqs-filtered2_table-prok-only.qza \
+  --o-alignment 16S/phylogeny/aligned-rep-seqs-filtered1_table-prok-only.qza \
+  --o-masked-alignment 16S/phylogeny/masked-aligned-rep-seqs-filtered2_table-prok-only.qza \
+  --o-tree 16S/phylogeny/unrooted-tree-filtered2_prok.qza \
+  --o-rooted-tree 16S/phylogeny/rooted-tree-filtered2-prok.qza \
+  --p-n-threads auto 
+
+####heatmap
+
+
+qiime feature-table filter-features \
+  --i-table 16S/filtered_tables/filtered2_table-prok-only.qza \
+  --p-min-frequency 100 \
+  --o-filtered-table 16S/filtered_tables/filtered3_table-prok-only.qza
+
+qiime feature-table summarize \
+  --i-table 16S/filtered_tables/filtered3_table-prok-only.qza \
+  --o-visualization 16S/filtered_tables/filtered3_table-prok-only.qzv \
+  --m-sample-metadata-file metadata/cacao_metadata_combined.tsv
+
+qiime tools view 16S/filtered_tables/filtered3_table-prok-only.qzv
+
+qiime feature-table filter-seqs \
+  --i-data 16S/rep-seqs/rep-seqs-16S.qza \
+  --i-table 16S/filtered_tables/filtered3_table-prok-only.qza \
+  --o-filtered-data 16S/filtered_seqs/rep-seqs-filtered3_table-prok-only.qza
+
+qiime feature-table tabulate-seqs \
+  --i-data 16S/filtered_seqs/rep-seqs-filtered3_table-prok-only.qza \
+  --o-visualization 16S/filtered_seqs/rep-seqs-filtered3_table-prok-only.qzv
+
+qiime tools view 16S/filtered_seqs/rep-seqs-filtered3_table-prok-only.qzv
+
+qiime taxa collapse \
+  --i-table 16S/filtered_tables/filtered3_table-prok-only.qza \
+  --i-taxonomy 16S/taxonomy/taxonomy-16S.qza \
+  --p-level 5 \
+  --o-collapsed-table 16S/filtered_tables/filtered3_table-prok-only-highly-abundant-collapsed-family.qza
+
+mkdir 16S/heatmap
+
+qiime feature-table heatmap \
+  --i-table 16S/filtered_tables/filtered3_table-prok-only-highly-abundant-collapsed-family.qza \
+  --m-sample-metadata-file metadata/cacao_metadata_combined.tsv \
+  --m-sample-metadata-column days_ferment \
+  --p-color-scheme coolwarm \
+  --o-visualization 16S/heatmap/filtered3_table-prok-only-highly-abundant-collapsed-family_ferment.qzv
+  
+qiime tools view 16S/heatmap/filtered3_table-prok-only-highly-abundant-collapsed-family_ferment.qzv
+
+qiime feature-table heatmap \
+  --i-table 16S/filtered_tables/filtered3_table-prok-only-highly-abundant-collapsed-family.qza \
+  --m-sample-metadata-file metadata/cacao_metadata_combined.tsv \
+  --m-sample-metadata-column Location \
+  --p-color-scheme coolwarm \
+  --o-visualization 16S/heatmap/filtered3_table-prok-only-highly-abundant-collapsed-family_location.qzv
+  
+qiime tools view 16S/heatmap/filtered3_table-prok-only-highly-abundant-collapsed-family_location.qzv
+
+qiime tools view 16S/filtered_tables/filtered2_table-prok-only.qzv
+
+
+mkdir 16S/richness
+
+qiime diversity alpha \
+  --i-table 16S/filtered_tables/filtered2_table-prok-only.qza \
+  --p-metric observed_features \
+  --o-alpha-diversity 16S/richness/richness.qza 
+
+qiime diversity alpha-group-significance \
+  --i-alpha-diversity 16S/richness/richness.qza \
+  --m-metadata-file metadata/cacao_metadata_combined.tsv \
+  --o-visualization 16S/richness/richness.qzv
+
+qiime tools view 16S/richness/richness.qzv
+
+
+#QIIME2 diversity workflow [additional analyses]
+qiime diversity alpha-rarefaction \
+  --i-table filtered_tables/filtered2_table-prok-only.qza \
+  --i-phylogeny phylogeny/rooted-tree-filtered2-prok.qza \
+  --p-max-depth 21071 \
+  --m-metadata-file metadata/cacao_metadata_combined.tsv \
+  --o-visualization alpha-rarefaction-prok_21071.qzv
+
+qiime tools view alpha-rarefaction-prok_21071.qzv
+
+
+#Core metrics with phylogenetic measures
+qiime diversity core-metrics-phylogenetic \
+  --i-phylogeny phylogeny/rooted-tree-filtered2-prok.qza \
+  --i-table filtered_tables/filtered2_table-prok-only.qza \
+  --p-sampling-depth 21071 \
+  --m-metadata-file metadata/cacao_metadata_combined.tsv \
+  --output-dir core-metrics-results
+
+
+qiime diversity alpha-group-significance \
+  --i-alpha-diversity core-metrics-results/observed_features_vector.qza \
+  --m-metadata-file metadata/cacao_metadata_combined.tsv \
+  --o-visualization core-metrics-results/observed-features-group-significance.qzv
+
+qiime tools view core-metrics-results/observed-features-group-significance.qzv
+
+qiime tools view core-metrics-results/bray_curtis_emperor.qzv
+qiime tools view core-metrics-results/unweighted_unifrac_emperor.qzv
+qiime tools view core-metrics-results/weighted_unifrac_emperor.qzv
+
+#Beta diversity code not working...
+
+qiime diversity beta-group-significance \
+  --i-distance-matrix core-metrics-results/weighted_unifrac_distance_matrix.qza \
+  --m-metadata-file metadata/cacao_metadata_combined.tsv \
+  --m-metadata-column Site \
+  --o-visualization core-metrics-results/weighted-unifrac-Site-significance.qzv \
+  --p-pairwise
+
+qiime tools view core-metrics-results/weighted-unifrac-Site-significance.qzv
+
+qiime diversity beta-group-significance \
+  --i-distance-matrix core-metrics-results/weighted_unifrac_distance_matrix.qza \
+  --m-metadata-file metadata/cacao_metadata_combined.tsv \
+  --m-metadata-column selection_site \
+  --o-visualization core-metrics-results/weighted-unifrac-selection_site-significance.qzv \
+  --p-pairwise
+
+qiime tools view core-metrics-results/weighted-unifrac-selection_site-significance.qzv
+
+qiime diversity beta-group-significance \
+  --i-distance-matrix core-metrics-results/weighted_unifrac_distance_matrix.qza \
+  --m-metadata-file metadata/cacao_metadata_combined.tsv \
+  --m-metadata-column tree_selection \
+  --o-visualization core-metrics-results/weighted-unifrac-tree_selection-significance.qzv \
+  --p-pairwise
+
+qiime tools view core-metrics-results/weighted-unifrac-tree_selection-significance.qzv
+
+################################################################################
+Fungal_ITS 
+################################################################################
+
+#I will extract ITS sequences from each dataset/run (cacao_a and cacao_b) and then run dada2 on them, they will then be combined.
+
+#dir: /Users/nguyenlab01/Documents/Rick/cacao_combined/cacao_a
+
+mkdir Fungal_ITS
+mkdir Fungal_ITS/trimmed_seqs
+
+qiime cutadapt trim-paired \
+  --i-demultiplexed-sequences demux/demux.qza \
+  --p-adapter-f '^CTTGGTCATTTAGAGGAAGTAA...GCATCGATGAAGAACGCAGC' \
+  --p-adapter-r '^GCTGCGTTCTTCATCGATGC...TTACTTCCTCTAAATGACCAAG' \
+  --p-cores 4 \
+  --o-trimmed-sequences Fungal_ITS/trimmed_seqs/trimmed-seqs-Fungal_ITS.qza \
+  --p-discard-untrimmed \
+  --p-overlap 10 \
+  --p-minimum-length 50 \
+  --verbose \
+  --p-error-rate 0.13 
+
+qiime demux summarize \
+  --i-data Fungal_ITS/trimmed_seqs/trimmed-seqs-Fungal_ITS.qza \
+  --o-visualization Fungal_ITS/trimmed_seqs/trimmed-seqs-Fungal_ITS.qzv
+
+qiime tools view Fungal_ITS/trimmed_seqs/trimmed-seqs-Fungal_ITS.qzv
+
+mkdir Fungal_ITS/dada2
+
+qiime dada2 denoise-paired \
+  --i-demultiplexed-seqs Fungal_ITS/trimmed_seqs/trimmed-seqs-Fungal_ITS.qza \
+  --p-trim-left-f 0 \
+  --p-trunc-len-f  140 \
+  --p-trim-left-r 0 \
+  --p-trunc-len-r 147 \
+  --o-representative-sequences Fungal_ITS/dada2/rep-seqs-Fungal_ITS.qza \
+  --o-table Fungal_ITS/dada2/table-Fungal_ITS.qza \
+  --o-denoising-stats Fungal_ITS/dada2/denoising-stats-Fungal_ITS.qza \
+  --p-n-threads 0 \
+  --p-n-reads-learn 1000000
+
+
+qiime metadata tabulate \
+  --m-input-file Fungal_ITS/dada2/denoising-stats-Fungal_ITS.qza \
+  --o-visualization Fungal_ITS/dada2/denoising-stats-Fungal_ITS.qzv
+  
+qiime tools view Fungal_ITS/dada2/denoising-stats-Fungal_ITS.qzv
+
+
+qiime feature-table summarize \
+  --i-table Fungal_ITS/dada2/table-Fungal_ITS.qza \
+  --o-visualization Fungal_ITS/dada2/table-Fungal_ITS.qzv \
+  --m-sample-metadata-file metadata/metadata_cacao_a.tsv
+
+qiime tools view Fungal_ITS/dada2/table-Fungal_ITS.qzv
+
+qiime feature-table tabulate-seqs \
+  --i-data Fungal_ITS/dada2/rep-seqs-Fungal_ITS.qza \
+  --o-visualization Fungal_ITS/dada2/rep-seqs-Fungal_ITS.qzv
+  
+qiime tools view Fungal_ITS/dada2/rep-seqs-Fungal_ITS.qzv
+
+
+###next 
+
+##############################
+###Cacao_b
+##############################
+
+cd cacao_combined/cacao_b
+
+mkdir Fungal_ITS
+mkdir Fungal_ITS/trimmed_seqs
+
+#I used cutadapt in qiime2 for the following Fungal_ITS primers 
+#ITS1F-ITS2, amplicon length = 260 bp
+#FWD:CTTGGTCATTTAGAGGAAGTAA; REV:GCTGCGTTCTTCATCGATGC
+#Note that the p-adapter-f and p-adapter-r use the '...' to separate the primers as such...
+#fwd..reverse complement rev, and rev...reverse complement fwd
+
+
+qiime cutadapt trim-paired \
+  --i-demultiplexed-sequences imported_seqs/imported-paired-end-seqs.qza \
+  --p-adapter-f '^CTTGGTCATTTAGAGGAAGTAA...GCATCGATGAAGAACGCAGC' \
+  --p-adapter-r '^GCTGCGTTCTTCATCGATGC...TTACTTCCTCTAAATGACCAAG' \
+  --p-cores 4 \
+  --o-trimmed-sequences Fungal_ITS/trimmed_seqs/trimmed-seqs-Fungal_ITS.qza \
+  --p-discard-untrimmed \
+  --p-overlap 10 \
+  --p-minimum-length 50 \
+  --verbose \
+  --p-error-rate 0.13 
+
+qiime demux summarize \
+  --i-data Fungal_ITS/trimmed_seqs/trimmed-seqs-Fungal_ITS.qza \
+  --o-visualization Fungal_ITS/trimmed_seqs/trimmed-seqs-Fungal_ITS.qzv
+
+qiime tools view Fungal_ITS/trimmed_seqs/trimmed-seqs-Fungal_ITS.qzv
+
+
+mkdir Fungal_ITS/dada2
+
+
+qiime dada2 denoise-paired \
+  --i-demultiplexed-seqs Fungal_ITS/trimmed_seqs/trimmed-seqs-Fungal_ITS.qza \
+  --p-trim-left-f 0 \
+  --p-trunc-len-f  140 \
+  --p-trim-left-r 0 \
+  --p-trunc-len-r 147 \
+  --o-representative-sequences Fungal_ITS/dada2/rep-seqs-Fungal_ITS.qza \
+  --o-table Fungal_ITS/dada2/table-Fungal_ITS.qza \
+  --o-denoising-stats Fungal_ITS/dada2/denoising-stats-Fungal_ITS.qza \
+  --p-n-threads 0 \
+  --p-n-reads-learn 1000000
+
+
+qiime metadata tabulate \
+  --m-input-file Fungal_ITS/dada2/denoising-stats-Fungal_ITS.qza \
+  --o-visualization Fungal_ITS/dada2/denoising-stats-Fungal_ITS.qzv
+  
+qiime tools view Fungal_ITS/dada2/denoising-stats-Fungal_ITS.qzv
+
+qiime feature-table summarize \
+  --i-table Fungal_ITS/dada2/table-Fungal_ITS.qza \
+  --o-visualization Fungal_ITS/dada2/table-Fungal_ITS.qzv \
+  --m-sample-metadata-file metadata/cacao_metadata.tsv
+
+qiime tools view Fungal_ITS/dada2/table-Fungal_ITS.qzv
+
+qiime feature-table tabulate-seqs \
+  --i-data Fungal_ITS/dada2/rep-seqs-Fungal_ITS.qza \
+  --o-visualization Fungal_ITS/dada2/rep-seqs-Fungal_ITS.qzv
+  
+qiime tools view Fungal_ITS/dada2/rep-seqs-Fungal_ITS.qzv
+
+
+
+################################################
+Cacao Combined Fungal_ITS
+################################################
+
+cd cacao_combined
+mkdir Fungal_ITS
+mkdir Fungal_ITS/tables
+
+qiime feature-table merge \
+  --i-tables cacao_b/Fungal_ITS/dada2/table-Fungal_ITS.qza \
+  --i-tables cacao_a/Fungal_ITS/dada2/table-Fungal_ITS.qza \
+  --o-merged-table Fungal_ITS/tables/table_cacao_combined-Fungal_ITS.qza
+
+mkdir Fungal_ITS/rep-seqs
+
+qiime feature-table merge-seqs \
+  --i-data cacao_b/Fungal_ITS/dada2/rep-seqs-Fungal_ITS.qza \
+  --i-data cacao_a/Fungal_ITS/dada2/rep-seqs-Fungal_ITS.qza \
+  --o-merged-data Fungal_ITS/rep-seqs/rep-seqs-Fungal_ITS.qza
+
+qiime feature-table summarize \
+  --i-table Fungal_ITS/tables/table_cacao_combined-Fungal_ITS.qza \
+  --o-visualization Fungal_ITS/tables/table_cacao_combined-Fungal_ITS.qzv \
+  --m-sample-metadata-file metadata/cacao_metadata_combined.tsv
+
+qiime tools view Fungal_ITS/tables/table_cacao_combined-Fungal_ITS.qzv
+
+mkdir Fungal_ITS/clustering
+
+#CLUSTER OTUs by using vsearch
+#Here we use de novo clustering
+
+qiime vsearch cluster-features-de-novo \
+  --i-table Fungal_ITS/tables/table_cacao_combined-Fungal_ITS.qza  \
+  --i-sequences Fungal_ITS/rep-seqs/rep-seqs-Fungal_ITS.qza \
+  --p-perc-identity 0.97 \
+  --o-clustered-table Fungal_ITS/clustering/clustered-table-Fungal_ITS.qza \
+  --o-clustered-sequences Fungal_ITS/clustering/clustered-rep-seqs-Fungal_ITS.qza
+
+#SUMMARIZE and view summaries of the FeatureTable (OTU table) and FeatureData (representative seqs)
+qiime feature-table summarize \
+  --i-table Fungal_ITS/clustering/clustered-table-Fungal_ITS.qza \
+  --m-sample-metadata-file metadata/cacao_metadata_combined.tsv \
+  --o-visualization Fungal_ITS/clustering/clustered-table-Fungal_ITS.qzv
+
+qiime tools view Fungal_ITS/clustering/clustered-table-Fungal_ITS.qzv
+
+###Assign taxonomy
+
+mkdir Fungal_ITS/taxonomy
+
+qiime feature-classifier classify-sklearn \
+  --i-classifier qiime_classifiers/UNITE-v8.2-qiime2020.8-dynamic-dev-02.02.2020+mock-classifier.qza \
+  --i-reads Fungal_ITS/clustering/clustered-rep-seqs-Fungal_ITS.qza \
+  --o-classification Fungal_ITS/taxonomy/taxonomy-Fungal_ITS.qza
+
+qiime metadata tabulate \
+  --m-input-file Fungal_ITS/taxonomy/taxonomy-Fungal_ITS.qza \
+  --o-visualization Fungal_ITS/taxonomy/taxonomy-Fungal_ITS.qzv
+
+qiime tools view Fungal_ITS/taxonomy/taxonomy-Fungal_ITS.qzv
+
+qiime taxa barplot \
+  --i-table Fungal_ITS/clustering/clustered-table-Fungal_ITS.qza \
+  --i-taxonomy Fungal_ITS/taxonomy/taxonomy-Fungal_ITS.qza \
+  --m-metadata-file metadata/cacao_metadata_combined.tsv \
+  --o-visualization Fungal_ITS/taxonomy/taxa-bar-plots-Fungal_ITS.qzv
+
+qiime tools view Fungal_ITS/taxonomy/taxa-bar-plots-Fungal_ITS.qzv
+
+#################################################################################
+QUALITY CONTROL OF OTUS (Fungal_ITS Only)
+#################################################################################
+#FILTER by sequence matches based on alignment quality (e.g. 212 bases of the query sequence aligned out of 250 total bases (length/qlen = 0.85)
+#Multiple independent researchers have shown that a lot more OTUs are present at length/qlen ≤ 0.85 (perhaps due to sequence or PCR error)
+#You can create a scatter plot of length/qlen vs. number of sequences and draw a curve, the inflection point of the curve will usually fall around 0.85.
+#REMOVE any sequences that has a length/qlen ≤ 0.85, although it does depend on your dataset.
+#USE the "dynamic" version of the UNITE database that includes synthetic mock community sequences so that these are not filtered out.
+#This database is kept updated and is available in the lab's Shared Drive.
+#make a directory named “reference_databases” and transfer the reference database files here
+
+mkdir Fungal_ITS/filtered_tables
+
+
+#IMPORT UNITE database
+qiime tools import \
+  --type 'FeatureData[Sequence]' \
+  --input-path reference_databases/sh_refs_qiime_ver8_dynamic_02.02.2020_dev+mock.fasta \
+  --output-path reference_databases/sh_refs_qiime_ver8_dynamic_02.02.2020_dev+mock.qza
+
+
+qiime quality-control evaluate-seqs \
+  --i-query-sequences Fungal_ITS/clustering/clustered-rep-seqs-Fungal_ITS.qza \
+  --i-reference-sequences reference_databases/sh_refs_qiime_ver8_dynamic_02.02.2020_dev+mock.qza \
+  --o-visualization Fungal_ITS/clustering/clustered-seqs-evaluated-Fungal_ITS.qzv
+  
+#VIZUALIZE the output
+qiime tools view Fungal_ITS/clustering/clustered-seqs-evaluated-Fungal_ITS.qzv
+
+#Previously, it looked like 85% perc-query-aligned was too stringent, so I adjusted and ran the following code, as many sequences I blasted and found to be fungal were removed because they were less than 82% aligned, including a very highly abundant yeast with a 100% sequence identity.
+
+
+#EXCLUDE sequences that are ≤ 0.80 qlength (percent coverage) in BLAST search
+#This step will help remove non-biological sequences
+#We want to keep identity at 0 because we do not want to remove new species of fungi that have not been discovered
+
+qiime quality-control exclude-seqs \
+  --i-query-sequences Fungal_ITS/clustering/clustered-rep-seqs-Fungal_ITS.qza \
+  --i-reference-sequences reference_databases/sh_refs_qiime_ver8_dynamic_02.02.2020_dev+mock.qza \
+  --p-method blast \
+  --p-perc-identity 0.0 \
+  --p-perc-query-aligned 0.80 \
+  --o-sequence-hits Fungal_ITS/clustering/quality-control-hits_Fungal_ITS.qza \
+  --o-sequence-misses Fungal_ITS/clustering/quality-control-misses_Fungal_ITS.qza
+
+#EXAMINE the quality control misses so that you can be sure that what you're going to throw out do not contain a large portion of fungal sequences.
+
+#You can blast the output fasta file and examine the results
+#########This blast step needs automated if possible...but how?
+
+#If a lot of the sequences are legitimate, you will need to tweak the parameters in the "exclude-seqs" step above
+#There was one highly abundant sequence that appeared to be of fungal origin. When I blasted using blastn and the unite database they both showed 100% coverage; however, when I grabbed the actual reference sequence and aligned with the sample sequence, it showed only ~82% coverage (just as the quality control blast process predicted. 
+
+qiime tools export \
+  --input-path Fungal_ITS/clustering/quality-control-misses_Fungal_ITS.qza \
+  --output-path Fungal_ITS/clustering/exported-quality-control
+
+##Create a file with just the featureIDs of the control missed sequences
+touch Fungal_ITS/clustering/exported-quality-control/dna-sequences_featureID.txt
+
+grep '^>' Fungal_ITS/clustering/exported-quality-control/dna-sequences.fasta > Fungal_ITS/clustering/exported-quality-control/dna-sequences_featureID.txt
+
+###If you wish to check your reference database you can do so with the following code
+qiime tools export \
+  --input-path reference_databases/sh_refs_qiime_ver8_dynamic_02.02.2020_dev+mock.qza \
+  --output-path reference_databases/sh_refs_qiime_ver8_dynamic_02.02.2020_dev+mock
+
+
+
+
+#FILTER the main feature table so that it excludes OTUs that are considered misses
+qiime feature-table filter-features \
+  --i-table Fungal_ITS/clustering/clustered-table-Fungal_ITS.qza \
+  --m-metadata-file Fungal_ITS/clustering/quality-control-misses_Fungal_ITS.qza \
+  --p-exclude-ids \
+  --o-filtered-table Fungal_ITS/filtered_tables/Fungal_ITS_table-quality-control.qza
+
+#################################################################################
+SUBSET AND FILTER SAMPLES FROM FEATURE TABLES & TAXONOMY (Fungal_ITS)
+#################################################################################
+#Filtering methods are different for different project requirements 
+#https://docs.qiime2.org/2018.8/tutorials/filtering/ <-- very useful! Look under "Metadata-based filtering"
+
+#FILTER & REMOVE NON-FUNGAL OTUS
+qiime taxa filter-table \
+  --i-table Fungal_ITS/filtered_tables/Fungal_ITS_table-quality-control.qza \
+  --i-taxonomy Fungal_ITS/taxonomy/taxonomy-Fungal_ITS.qza \
+  --p-include k__ \
+  --p-exclude Unassigned,Rhizaria,Protista,Metazoa \
+  --o-filtered-table Fungal_ITS/filtered_tables/table-quality-control-fungi-only.qza
+
+#CHECK sequences
+qiime feature-table summarize \
+  --i-table Fungal_ITS/filtered_tables/table-quality-control-fungi-only.qza \
+  --o-visualization Fungal_ITS/filtered_tables/table-quality-control-fungi-only.qzv
+
+#VISUALIZE the data through a barplot
+qiime taxa barplot \
+  --i-table Fungal_ITS/filtered_tables/table-quality-control-fungi-only.qza \
+  --i-taxonomy Fungal_ITS/taxonomy/taxonomy-Fungal_ITS.qza \
+  --m-metadata-file metadata/cacao_metadata_combined.tsv \
+  --o-visualization Fungal_ITS/taxonomy/taxa-bar-plots-fungi-only.qzv
+
+qiime tools view Fungal_ITS/taxonomy/taxa-bar-plots-fungi-only.qzv
+
+#################################################################################
+DEALING WITH CONTROLS
+#################################################################################
+#OBSERVE the positive and negative controls from the exported table
+#Is there evidence for tag bleeding/switching? With our dual barcode system, this is not a common case.
+#Are there any negative control sequences that appear in abundance? If so, these need to be removed.
+#Use what you've learned to further filter the table
+
+#some notes from qiime folks and a user on the board
+#I’d strongly recommend against straight up subtracting the reads. For one, the reads are unevenly distributed across the samples. In addition, since we are most concerned with the proportion of reads, it’s not clear how to best account for these confounders.
+#I don’t think you could just subtract outright as each sample is going to have a very different total frequency of OTUs. However, I wonder if you would be able to scale the control’s counts to a sample’s total frequency. It won’t be perfect as there’ll still be sequences which the control didn’t see, but could have, if it had happened to have more sequencing depth, but that’s a problem with a qualitative filter anyhow.
+#Then I would process the data of my biological samples in parallel with these controls. The next steps is to check the composition (alpha and beta diversity) of your controls and how they relate to your biological samples.
+#If your controls are very dissimilar from your biological samples then you could use them as a baseline or control in the frame of your whole analysis. You could use tools like LEfSe, MaAsLin, ancom, gneiss etc. to investigate the composition of your controls and maybe define a “kitome” for your study. Your positive controls can be processed with quality-control to understand the quality of your sequencing data. Finally if there is no overlap between your biological samples and your controls you do not have to filter them from your data, but describe them in your study.
+#If your controls are similar to your biological samples the hard work starts. We often work in low biomass environments and therefore have to estimate if a certain ASV (amplicon sequence variant) present in both sample types (biological samples and controls) makes sense for a microbial ecologist. Usually I use two main methods at the moment to filter controls. First the tool decontam and then subtraction of normalized ASV tables (for instance if we work with skin samples and see an ASV assigned to Staphylococcus aureus or any other typical skin bacteria). Then I compare my filtered data analysis with the original data. Dependent on the results I usually include both analysis in a manuscript. Sometimes it makes sense to show your controls in relation to your biological samples and sometimes it is better to show data that is based on a filtered dataset.
+
+#IMPORTANT: The first part of this workflow extracts taxonomy and append it to an existing OTU table. This is highly recommended.
+#EXPORT taxonomy artifact
+
+qiime tools export \
+  --input-path Fungal_ITS/taxonomy/taxonomy-Fungal_ITS.qza \
+  --output-path Fungal_ITS/exported-taxonomy-Fungal_ITS
+
+#COPY and re-name taxonomy file
+cp Fungal_ITS/exported-taxonomy-Fungal_ITS/taxonomy.tsv Fungal_ITS/exported-taxonomy-Fungal_ITS/biom-taxonomy-Fungal_ITS.tsv
+
+#REPLACE the header of the table with QIIME style formatting
+#OTUID	taxonomy	confidence
+#Rick's notes: I figured out how to automate this, and it works, but it isn't very elegant
+
+cat Fungal_ITS/exported-taxonomy-Fungal_ITS/biom-taxonomy-Fungal_ITS.tsv | tr "\\t" "," > Fungal_ITS/exported-taxonomy-Fungal_ITS/biom-taxonomy-Fungal_ITS.csv
+
+new_header="#OTUID,taxonomy,confidence"
+sed -i '' "1s/.*/$new_header/" Fungal_ITS/exported-taxonomy-Fungal_ITS/biom-taxonomy-Fungal_ITS.csv
+
+cat Fungal_ITS/exported-taxonomy-Fungal_ITS/biom-taxonomy-Fungal_ITS.csv | tr "," "\\t" > Fungal_ITS/exported-taxonomy-Fungal_ITS/biom-taxonomy-Fungal_ITS.tsv
+
+rm Fungal_ITS/exported-taxonomy-Fungal_ITS/biom-taxonomy-Fungal_ITS.csv
+
+#EXPORT OTU table into BIOM format for further processing
+
+qiime tools export \
+  --input-path Fungal_ITS/filtered_tables/table-quality-control-fungi-only.qza \
+  --output-path Fungal_ITS/exported-table-Fungal_ITS
+
+#ADD metadata to the OTU table and convert it to tsv to view
+
+biom add-metadata \
+ -i Fungal_ITS/exported-table-Fungal_ITS/feature-table.biom \
+ -o Fungal_ITS/exported-table-Fungal_ITS/feature-table-with-taxonomy.biom \
+ --observation-metadata-fp Fungal_ITS/exported-taxonomy-Fungal_ITS/biom-taxonomy-Fungal_ITS.tsv \
+ --sc-separated taxonomy
+
+
+
+#CONVERT biom to tsv for analyses elsewhere
+biom convert \
+  -i Fungal_ITS/exported-table-Fungal_ITS/feature-table-with-taxonomy.biom \
+  -o Fungal_ITS/exported-table-Fungal_ITS/feature-table-with-taxonomy.tsv \
+  --to-tsv \
+  --process-obs-metadata taxonomy \
+  --header-key taxonomy
+
+#This is where you can decide to remove other OTUs or samples that did not pass other filtering steps
+#Samples could be removed using the options within "qiime feature-table XXX" or manual through the spreadsheet and then converted back into biom for further processing in QIIME.
+#Rick's notes: This is a preliminary work up.
+
+qiime tools view Fungal_ITS/filtered_tables/table-quality-control-fungi-only.qzv
+
+qiime feature-table filter-features \
+  --i-table Fungal_ITS/filtered_tables/table-quality-control-fungi-only.qza \
+  --p-min-frequency 10 \
+  --o-filtered-table Fungal_ITS/filtered_tables/filtered1_table-fungi-only.qza
+
+qiime feature-table summarize \
+  --i-table Fungal_ITS/filtered_tables/filtered1_table-fungi-only.qza \
+  --o-visualization Fungal_ITS/filtered_tables/filtered1_table-fungi-only.qzv \
+  --m-sample-metadata-file metadata/cacao_metadata_combined.tsv
+
+qiime taxa barplot \
+  --i-table Fungal_ITS/filtered_tables/filtered1_table-fungi-only.qza \
+  --i-taxonomy Fungal_ITS/taxonomy/taxonomy-Fungal_ITS.qza \
+  --m-metadata-file metadata/cacao_metadata_combined.tsv \
+  --o-visualization Fungal_ITS/taxonomy/taxa_barplot_filtered1_table-fungi-only.qzv
+
+qiime tools view Fungal_ITS/taxonomy/taxa_barplot_filtered1_table-fungi-only.qzv
+
+qiime feature-table filter-samples \
+  --i-table Fungal_ITS/filtered_tables/filtered1_table-fungi-only.qza \
+  --p-min-features 10 \
+  --o-filtered-table Fungal_ITS/filtered_tables/filtered2_table-fungi-only.qza
+
+
+qiime feature-table summarize \
+  --i-table Fungal_ITS/filtered_tables/filtered2_table-fungi-only.qza \
+  --o-visualization Fungal_ITS/filtered_tables/filtered2_table-fungi-only.qzv \
+  --m-sample-metadata-file metadata/cacao_metadata_combined.tsv
+
+qiime tools view Fungal_ITS/filtered_tables/filtered2_table-fungi-only.qzv
+
+#CREATE another taxa barplot for data exploration
+qiime taxa barplot \
+  --i-table Fungal_ITS/filtered_tables/filtered2_table-fungi-only.qza \
+  --i-taxonomy Fungal_ITS/taxonomy/taxonomy-Fungal_ITS.qza \
+  --m-metadata-file metadata/cacao_metadata_combined.tsv \
+  --o-visualization Fungal_ITS/taxonomy/taxa_barplot_filtered2_table-fungi-only.qzv
+
+qiime tools view Fungal_ITS/taxonomy/taxa_barplot_filtered2_table-fungi-only.qzv
+
+mkdir Fungal_ITS/filtered_seqs
+
+qiime feature-table filter-seqs \
+  --i-data Fungal_ITS/rep-seqs/rep-seqs-Fungal_ITS.qza \
+  --i-table Fungal_ITS/filtered_tables/filtered2_table-fungi-only.qza \
+  --o-filtered-data Fungal_ITS/filtered_seqs/rep-seqs-filtered2_table-fungi-only.qza
+
+qiime feature-table tabulate-seqs \
+  --i-data Fungal_ITS/filtered_seqs/rep-seqs-filtered2_table-fungi-only.qza \
+  --o-visualization Fungal_ITS/filtered_seqs/rep-seqs-filtered2_table-fungi-only.qzv
+
+qiime tools view Fungal_ITS/filtered_seqs/rep-seqs-filtered2_table-fungi-only.qzv
+
+mkdir Fungal_ITS/richness
+
+qiime diversity alpha \
+  --i-table Fungal_ITS/filtered_tables/filtered2_table-fungi-only.qza \
+  --p-metric observed_features \
+  --o-alpha-diversity Fungal_ITS/richness/richness.qza 
+
+qiime diversity alpha-group-significance \
+  --i-alpha-diversity Fungal_ITS/richness/richness.qza \
+  --m-metadata-file metadata/cacao_metadata_combined.tsv \
+  --o-visualization Fungal_ITS/richness/richness.qzv
+
+qiime tools view Fungal_ITS/richness/richness.qzv
+
+
+####
+Exporting trees for phyloseq/r
+#####
+
+mkdir 16S/trees
+
+qiime tools export \
+  --input-path 16S/phylogeny/rooted-tree-filtered2-prok.qza \
+  --output-path 16S/trees
+
+mv 16S/trees/tree.nwk 16S/trees/cacao_rooted-tree-filtered2-prok.nwk 
+
+
+###When possible use biom and tree files along with fasta files to import into phyloseq 
+
+
+qiime tools export \
+	--input-path 16S/filtered_seqs/rep-seqs-filtered2_table-prok-only.qza  \
+	--output-path 16S/filtered_seqs/rep-seqs-filtered2_table-prok-only.fasta
+
+mv 16S/filtered_seqs/rep-seqs-filtered2_table-prok-only.fasta/dna-sequences.fasta 16S/filtered_seqs/rep-seqs-filtered2_table-prok-only.fasta/rep-seqs-filtered2_table-prok-only.fasta
+
+
+qiime tools export \
+	--input-path Fungal_ITS/filtered_seqs/rep-seqs-filtered2_table-fungi-only.qza  \
+	--output-path Fungal_ITS/filtered_seqs/rep-seqs-filtered2_table-fungi-only.fasta
+
+mv Fungal_ITS/filtered_seqs/rep-seqs-filtered2_table-fungi-only.fasta/dna-sequences.fasta Fungal_ITS/filtered_seqs/rep-seqs-filtered2_table-fungi-only.fasta/rep-seqs-filtered2_table-fungi-only.fasta
+
+
+
+
+mkdir cacao_phyloseq
+
+mkdir cacao_phyloseq/cacao_16S_ps
+
+cp 16S/exported-table-prok/feature-table-with-taxonomy_prok_only.biom cacao_phyloseq/cacao_16S_ps/cacao_prok.biom 
+
+cp 16S/trees/cacao_rooted-tree-filtered2-prok.nwk cacao_phyloseq/cacao_16S_ps/cacao_rooted-tree-filtered2-prok.nwk
+
+cp 16S/filtered_seqs/rep-seqs-filtered2_table-prok-only.fasta/rep-seqs-filtered2_table-prok-only.fasta cacao_phyloseq/cacao_16S_ps/cacao_prok-only.fasta
+
+
+
+mkdir cacao_phyloseq/cacao_Fungal_ITS_ps
+
+cp Fungal_ITS/exported-table-Fungal_ITS/feature-table-with-taxonomy.biom cacao_phyloseq/cacao_Fungal_ITS_ps/cacao_fungi.biom 
+
+
+
+cp Fungal_ITS/filtered_seqs/rep-seqs-filtered2_table-fungi-only.fasta/rep-seqs-filtered2_table-fungi-only.fasta cacao_phyloseq/cacao_Fungal_ITS_ps/cacao_fungi-only.fasta
+
+
+cp metadata/cacao_metadata_combined.tsv metadata/cacao_metadata_combined.csv
+
+
+
+
+###Diversity, Nhu's addition
+
+qiime tools view Fungal_ITS/filtered_tables/filtered2_table-fungi-only.qzv
+
+##72532 = depth that keeps all samples
+
+mkdir Fungal_ITS/alpha_diversity
+
+qiime diversity alpha-rarefaction \
+  --i-table filtered_tables/filtered2_table-fungi-only.qza \
+  --p-max-depth 51193 \
+  --m-metadata-file metadata/cacao_metadata_combined.tsv \
+  --o-visualization alpha-rarefaction-fungi_51193.qzv
+
+qiime tools view alpha-rarefaction-fungi_51193.qzv
+
+
+qiime diversity core-metrics \
+  --i-table filtered_tables/filtered2_table-fungi-only.qza \
+  --p-sampling-depth 51193 \
+  --m-metadata-file metadata/cacao_metadata_combined.tsv \
+  --output-dir core-metrics-results
+
+
+#EXPORT OTU table into BIOM format for further processing
+qiime tools export \
+  --input-path core-metrics-results/rarefied_table.qza \
+  --output-path exported-rarefied-table
+
+
+#ADD metadata to the OTU table and convert it to tsv to view
+biom add-metadata \
+ -i exported-rarefied-table/feature-table.biom \
+ -o exported-rarefied-table/rarefied-table-with-taxonomy.biom \
+ --observation-metadata-fp exported-taxonomy-Fungal_ITS/biom-taxonomy-Fungal_ITS.tsv \
+ --sc-separated taxonomy
+
+
+#CONVERT biom to tsv for analyses elsewhere
+biom convert \
+  -i exported-rarefied-table/rarefied-table-with-taxonomy.biom \
+  -o exported-rarefied-table/rarefied-table-with-taxonomy.tsv \
+  --to-tsv \
+  --process-obs-metadata taxonomy \
+  --header-key taxonomy
+
+
+
+
+
+
+
+
+###Potentially for Fungal_ITS
+###I didn’t use the following code…but it might be adapted for other figs etc
+
+
+
+qiime diversity alpha-group-significance \
+  --i-alpha-diversity core-metrics-results/observed_features_vector.qza \
+  --m-metadata-file metadata/cacao_metadata_combined.tsv \
+  --o-visualization core-metrics-results/observed-features-group-significance.qzv
+
+qiime tools view core-metrics-results/observed-features-group-significance.qzv
+
+
+qiime diversity alpha-group-significance \
+  --i-alpha-diversity Fungal_ITS/core-metrics-results-cacao_72532/observed_features_vector.qza \
+  --m-metadata-file metadata/cacao_metadata_combined.tsv \
+  --o-visualization Fungal_ITS/core-metrics-results-cacao_72532/observed_features_vector-group-significance-cacao.qzv
+
+
+qiime tools view Fungal_ITS/core-metrics-results-cacao_72532/observed_features_vector-group-significance-cacao.qzv
+
+qiime tools view Fungal_ITS/core-metrics-results-cacao_72532/bray_curtis_emperor.qzv
+
+
+
