@@ -492,55 +492,47 @@ qiime diversity alpha-rarefaction \
 
 qiime tools view alpha-rarefaction-prok_21071.qzv
 
-
+######################################################################
+RUNNING CORE METRICS FROM FILTERED TABLE
+######################################################################
 #Core metrics with phylogenetic measures
 qiime diversity core-metrics-phylogenetic \
   --i-phylogeny phylogeny/rooted-tree-filtered2-prok.qza \
   --i-table filtered_tables/filtered2_table-prok-only.qza \
   --p-sampling-depth 21071 \
-  --m-metadata-file metadata/cacao_metadata_combined.tsv \
+  --m-metadata-file cacao_metadata_combined.csv \
   --output-dir core-metrics-results
 
 
-qiime diversity alpha-group-significance \
-  --i-alpha-diversity core-metrics-results/observed_features_vector.qza \
-  --m-metadata-file metadata/cacao_metadata_combined.tsv \
-  --o-visualization core-metrics-results/observed-features-group-significance.qzv
+######################################################################
+EXPORT DATA TO RUN IN R
+######################################################################
+#EXPORT observed OTU counts
+qiime tools export \
+  --input-path core-metrics-results/observed_features_vector.qza \
+  --output-path exported-data
 
-qiime tools view core-metrics-results/observed-features-group-significance.qzv
+#RENAME the file
+mv exported-data/alpha-diversity.tsv exported-data/observed-otus.tsv
 
-qiime tools view core-metrics-results/bray_curtis_emperor.qzv
-qiime tools view core-metrics-results/unweighted_unifrac_emperor.qzv
-qiime tools view core-metrics-results/weighted_unifrac_emperor.qzv
+++++++++++++++++++++++++++++++++++++++++
+#EXPORT Shannon values
+qiime tools export \
+  --input-path core-metrics-results/shannon_vector.qza \
+  --output-path exported-data
 
-#Beta diversity code not working...
+#RENAME the file
+mv exported-data/alpha-diversity.tsv exported-data/shannon-diversity.tsv
 
-qiime diversity beta-group-significance \
-  --i-distance-matrix core-metrics-results/weighted_unifrac_distance_matrix.qza \
-  --m-metadata-file metadata/cacao_metadata_combined.tsv \
-  --m-metadata-column Site \
-  --o-visualization core-metrics-results/weighted-unifrac-Site-significance.qzv \
-  --p-pairwise
+++++++++++++++++++++++++++++++++++++++++
+#EXPORT PD values
+qiime tools export \
+  --input-path core-metrics-results/faith_pd_vector.qza \
+  --output-path exported-data
 
-qiime tools view core-metrics-results/weighted-unifrac-Site-significance.qzv
+#RENAME the file
+mv exported-data/alpha-diversity.tsv exported-data/faith-PD.tsv
 
-qiime diversity beta-group-significance \
-  --i-distance-matrix core-metrics-results/weighted_unifrac_distance_matrix.qza \
-  --m-metadata-file metadata/cacao_metadata_combined.tsv \
-  --m-metadata-column selection_site \
-  --o-visualization core-metrics-results/weighted-unifrac-selection_site-significance.qzv \
-  --p-pairwise
-
-qiime tools view core-metrics-results/weighted-unifrac-selection_site-significance.qzv
-
-qiime diversity beta-group-significance \
-  --i-distance-matrix core-metrics-results/weighted_unifrac_distance_matrix.qza \
-  --m-metadata-file metadata/cacao_metadata_combined.tsv \
-  --m-metadata-column tree_selection \
-  --o-visualization core-metrics-results/weighted-unifrac-tree_selection-significance.qzv \
-  --p-pairwise
-
-qiime tools view core-metrics-results/weighted-unifrac-tree_selection-significance.qzv
 
 ################################################################################
 Fungal_ITS 
@@ -920,7 +912,6 @@ biom convert \
 
 #This is where you can decide to remove other OTUs or samples that did not pass other filtering steps
 #Samples could be removed using the options within "qiime feature-table XXX" or manual through the spreadsheet and then converted back into biom for further processing in QIIME.
-#Rick's notes: This is a preliminary work up.
 
 qiime tools view Fungal_ITS/filtered_tables/table-quality-control-fungi-only.qzv
 
@@ -991,6 +982,89 @@ qiime diversity alpha-group-significance \
 
 qiime tools view Fungal_ITS/richness/richness.qzv
 
+######################################################################
+RUNNING CORE METRICS (Nhu's addition)
+######################################################################
+qiime tools view Fungal_ITS/filtered_tables/filtered2_table-fungi-only.qzv
+#51193 was chosen as the rarefaction number because we did not need the lowest sample.
+
+mkdir Fungal_ITS/alpha_diversity
+
+qiime diversity alpha-rarefaction \
+  --i-table filtered_tables/filtered2_table-fungi-only.qza \
+  --p-max-depth 51193 \
+  --m-metadata-file metadata/cacao_metadata_combined.tsv \
+  --o-visualization alpha-rarefaction-fungi_51193.qzv
+
+qiime diversity core-metrics \
+  --i-table filtered_tables/filtered2_table-fungi-only.qza \
+  --p-sampling-depth 51193 \
+  --m-metadata-file metadata/cacao_metadata_combined.tsv \
+  --output-dir core-metrics-results
+
+#################################################################################
+ADD TAXONOMY TO OTU TABLE FOR FURTHER ANALYSES OUTSIDE OF QIIME
+#################################################################################
+#EXPORT taxonomy artifact
+qiime tools export \
+  --input-path taxonomy/taxonomy-Fungal_ITS.qza \
+  --output-path exported-data
+
+#COPY and re-name taxonomy file
+cp exported-data/taxonomy.tsv exported-data/biom-taxonomy.tsv
+
+#REPLACE the header of the biom-taxonomy table with QIIME style formatting
+#OTUID	taxonomy	confidence
+
+#You can do this either manually or use the following commands:
+#These came from Rick's script and seems cumbersome. Perhaps there is a better way to do it...
+cat exported-data/biom-taxonomy.tsv | tr "\\t" "," > exported-data/biom-taxonomy.csv
+new_header="#OTUID,taxonomy,confidence"
+sed -i '' "1s/.*/$new_header/" exported-data/biom-taxonomy.csv
+cat exported-data/biom-taxonomy.csv | tr "," "\\t" > exported-data/biom-taxonomy.tsv
+rm exported-data/biom-taxonomy.csv
+
+#Export rarefied OTU table
+qiime tools export \
+  --input-path core-metrics-results/rarefied_table.qza \
+  --output-path exported-rarefied-table
+
+#ADD metadata to the OTU table and convert it to tsv to view
+biom add-metadata \
+ -i exported-rarefied-table/feature-table.biom \
+ -o exported-rarefied-table/feature-table-with-taxonomy.biom \
+ --observation-metadata-fp exported-data/biom-taxonomy.tsv \
+ --sc-separated taxonomy
+
+#CONVERT biom to tsv for analyses elsewhere
+biom convert \
+  -i exported-rarefied-table/feature-table-with-taxonomy.biom \
+  -o exported-rarefied-table/table-rarefied-with-taxonomy.tsv \
+  --to-tsv \
+  --process-obs-metadata taxonomy \
+  --header-key taxonomy
+
+cp exported-rarefied-table/table-rarefied-with-taxonomy.tsv exported-data/
+######################################################################
+EXPORT DATA TO RUN IN R
+######################################################################
+#EXPORT observed OTU counts
+qiime tools export \
+  --input-path core-metrics-results/observed_features_vector.qza \
+  --output-path exported-data
+
+#RENAME the file
+mv exported-data/alpha-diversity.tsv exported-data/observed-otus.tsv
+
+++++++++++++++++++++++++++++++++++++++++
+#EXPORT Shannon values
+qiime tools export \
+  --input-path core-metrics-results/shannon_vector.qza \
+  --output-path exported-data
+
+#RENAME the file
+mv exported-data/alpha-diversity.tsv exported-data/shannon-diversity.tsv
+
 
 ####
 Exporting trees for phyloseq/r
@@ -1022,109 +1096,21 @@ qiime tools export \
 mv Fungal_ITS/filtered_seqs/rep-seqs-filtered2_table-fungi-only.fasta/dna-sequences.fasta Fungal_ITS/filtered_seqs/rep-seqs-filtered2_table-fungi-only.fasta/rep-seqs-filtered2_table-fungi-only.fasta
 
 
-
+################################################################
+COPY FILES TO WORK IN R
+################################################################
 
 mkdir cacao_phyloseq
 
 mkdir cacao_phyloseq/cacao_16S_ps
-
 cp 16S/exported-table-prok/feature-table-with-taxonomy_prok_only.biom cacao_phyloseq/cacao_16S_ps/cacao_prok.biom 
-
 cp 16S/trees/cacao_rooted-tree-filtered2-prok.nwk cacao_phyloseq/cacao_16S_ps/cacao_rooted-tree-filtered2-prok.nwk
-
 cp 16S/filtered_seqs/rep-seqs-filtered2_table-prok-only.fasta/rep-seqs-filtered2_table-prok-only.fasta cacao_phyloseq/cacao_16S_ps/cacao_prok-only.fasta
 
-
-
 mkdir cacao_phyloseq/cacao_Fungal_ITS_ps
-
 cp Fungal_ITS/exported-table-Fungal_ITS/feature-table-with-taxonomy.biom cacao_phyloseq/cacao_Fungal_ITS_ps/cacao_fungi.biom 
-
-
-
 cp Fungal_ITS/filtered_seqs/rep-seqs-filtered2_table-fungi-only.fasta/rep-seqs-filtered2_table-fungi-only.fasta cacao_phyloseq/cacao_Fungal_ITS_ps/cacao_fungi-only.fasta
-
-
 cp metadata/cacao_metadata_combined.tsv metadata/cacao_metadata_combined.csv
 
-
-
-
-###Diversity, Nhu's addition
-
-qiime tools view Fungal_ITS/filtered_tables/filtered2_table-fungi-only.qzv
-
-##72532 = depth that keeps all samples
-
-mkdir Fungal_ITS/alpha_diversity
-
-qiime diversity alpha-rarefaction \
-  --i-table filtered_tables/filtered2_table-fungi-only.qza \
-  --p-max-depth 51193 \
-  --m-metadata-file metadata/cacao_metadata_combined.tsv \
-  --o-visualization alpha-rarefaction-fungi_51193.qzv
-
-qiime tools view alpha-rarefaction-fungi_51193.qzv
-
-
-qiime diversity core-metrics \
-  --i-table filtered_tables/filtered2_table-fungi-only.qza \
-  --p-sampling-depth 51193 \
-  --m-metadata-file metadata/cacao_metadata_combined.tsv \
-  --output-dir core-metrics-results
-
-
-#EXPORT OTU table into BIOM format for further processing
-qiime tools export \
-  --input-path core-metrics-results/rarefied_table.qza \
-  --output-path exported-rarefied-table
-
-
-#ADD metadata to the OTU table and convert it to tsv to view
-biom add-metadata \
- -i exported-rarefied-table/feature-table.biom \
- -o exported-rarefied-table/rarefied-table-with-taxonomy.biom \
- --observation-metadata-fp exported-taxonomy-Fungal_ITS/biom-taxonomy-Fungal_ITS.tsv \
- --sc-separated taxonomy
-
-
-#CONVERT biom to tsv for analyses elsewhere
-biom convert \
-  -i exported-rarefied-table/rarefied-table-with-taxonomy.biom \
-  -o exported-rarefied-table/rarefied-table-with-taxonomy.tsv \
-  --to-tsv \
-  --process-obs-metadata taxonomy \
-  --header-key taxonomy
-
-
-
-
-
-
-
-
-###Potentially for Fungal_ITS
-###I didn’t use the following code…but it might be adapted for other figs etc
-
-
-
-qiime diversity alpha-group-significance \
-  --i-alpha-diversity core-metrics-results/observed_features_vector.qza \
-  --m-metadata-file metadata/cacao_metadata_combined.tsv \
-  --o-visualization core-metrics-results/observed-features-group-significance.qzv
-
-qiime tools view core-metrics-results/observed-features-group-significance.qzv
-
-
-qiime diversity alpha-group-significance \
-  --i-alpha-diversity Fungal_ITS/core-metrics-results-cacao_72532/observed_features_vector.qza \
-  --m-metadata-file metadata/cacao_metadata_combined.tsv \
-  --o-visualization Fungal_ITS/core-metrics-results-cacao_72532/observed_features_vector-group-significance-cacao.qzv
-
-
-qiime tools view Fungal_ITS/core-metrics-results-cacao_72532/observed_features_vector-group-significance-cacao.qzv
-
-qiime tools view Fungal_ITS/core-metrics-results-cacao_72532/bray_curtis_emperor.qzv
-
-
+cp Fungal_ITS/exported-data/observed-otus.tsv Fungal_ITS/exported-data/shannon-diversity.tsv Fungal_ITS/exported-data/table-rarefied-with-taxonomy.tsv Fungal_ITS/metadata/cacao_metadata_combined.tsv /Volumes/GoogleDrive/Shared\ drives/Cacao\ fermentation/analyses_NN/Basic_stats 
 
