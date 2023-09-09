@@ -374,8 +374,8 @@ table_sig_phyllo_relabund <- left_join(table_sig_phyllo, table_relabund, by="OTU
 write.csv(table_sig_phyllo_relabund, "table_sig_phyllo_relabund.csv")
 
 #join the tables (ferment)
-table_sig_phyllo_relabund <- left_join(table_sig_phyllo, table_relabund, by="OTUID")
-write.csv(table_sig_phyllo_relabund, "table_sig_phyllo_relabund.csv")
+table_sig_ferm_relabund <- left_join(table_sig_ferm, table_relabund, by="OTUID")
+write.csv(table_sig_ferm_relabund, "table_sig_ferm_relabund.csv")
 
 
 
