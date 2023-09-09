@@ -1,5 +1,5 @@
 #set working directory
-setwd("/Volumes/GoogleDrive/.shortcut-targets-by-id/1--pvx1vLSBijmxHMCZPrxKlyFBLp2jqF/Rick/cacao_combined/cacao_physeq_full_analysis/cacao_16S_ps")
+setwd("~/Library/CloudStorage/GoogleDrive-nn33@hawaii.edu/.shortcut-targets-by-id/1-4rD_zMa5xHszdH4D_WkYU9f6pwkT0Kq/cacao_combined/cacao_physeq_full_analysis/cacao_16S_ps")
 
 #load libraries
 library(phyloseq)
@@ -123,9 +123,8 @@ sigtab_D0 = rescacao_16S_D0dds[which(rescacao_16S_D0dds$padj <= alpha), ]
 
 #Bind taxa names to tables of significant taxa
 sigtab_D0 = cbind(as(sigtab_D0, "data.frame"), as(tax_table(cacao_16S_D0)[rownames(sigtab_D0), ], "matrix"))
-
 #View(sigtab_D0)
-#write.csv(sigtab_D0, "sig_D0.csv")
+#write.csv(sigtab_D0, "sigtab_D0.csv")
 
 #Find ASVs that are not significant; ASVs that are common among the treatments
 notsigtab_D0 = rescacao_16S_D0dds[which(rescacao_16S_D0dds$padj > alpha), ]
@@ -155,7 +154,6 @@ write.csv(sigtab_D0sub, "sigtab_D0sub_manual_edits.csv")
 
 #Read edited file back in
 sigtab_D0sub <- read.csv("sigtab_D0sub_manual_edits.csv")
-
 
 #Plot the logfold changes
 sigtab_D0subp = ggplot(sigtab_D0sub, aes(x=log2FoldChange, y=reorder(Genus,desc(Genus)), color=Phylum)) +
@@ -195,11 +193,25 @@ ggsave("Figure2A-DESeq-phyllosphere.pdf", device="pdf", width=4, height=5)
 # dev.off()
 
 
+#############################################################
+# Connect DESeq significant OTUs to their relative abundances
+#############################################################
+#Two tables are needed:
+# 1) rarefied, relative abundance transformed table (cacao_16S_relabund.csv or otu table object "cacao_16S_relabund") from the "cacao_16S_basic.R" script
+# 2) significant table found through DESeq (sigtab_D0sub_manual_edits.csv or R object "sigtab_D0sub")
+#Tables must be edited so that the first column is called "OTUID"
 
+#read in tables
+#Read in rarefied OTU table
+table_relabund <- read.csv(file="cacao_16S_relabund.csv", header=TRUE, sep=',', check.names=FALSE)
+table_sig <- read.csv(file="sigtab_D0sub_manual_edits.csv", header=TRUE, sep=',', check.names=FALSE)
 
+#join the tables
+table_sig_relabund <- left_join(table_sig, table_relabund, by="OTUID")
+write.csv(table_sig_relabund, "table_sig_relabund.csv")
 
-
-
+#Add name to 1st column
+names(table_relabund)[0] <- 'OTUID'
 
 
 

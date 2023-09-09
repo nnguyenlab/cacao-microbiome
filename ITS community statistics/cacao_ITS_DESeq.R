@@ -348,6 +348,46 @@ sigtab_KR_D0D1subp2
 ggsave("Figure3A-DESeq-phyllosphere-ferment.pdf", device="pdf", width=3.1, height=2.5)
 
 
+
+#############################################################
+# Connect DESeq significant OTUs to their relative abundances
+#############################################################
+#Two tables are needed:
+# 1) rarefied, relative abundance transformed table (cacao_16S_relabund.csv or otu table object "cacao_ITS_relabund") from the "cacao_ITS_basic.R" script
+# 2) significant table found through DESeq (sigtab_D0sub_manual_edits.csv or R object "sigtab_D0sub")
+#Tables must be edited so that the first column is called "OTUID"
+
+#read in tables
+#Read in rarefied OTU table and add name to first column
+table_relabund <- read.csv(file="cacao_ITS_relabund.csv", header=TRUE, sep=',', check.names=FALSE) %>% 
+  rename("OTUID" = 1)
+
+#Read in DESeq significant tables and add name to first column
+table_sig_phyllo <- read.csv(file="sigtab_D0sub_manual_edits.csv", header=TRUE, sep=',', check.names=FALSE) %>% 
+  rename("OTUID" = 1)
+
+table_sig_ferm <- read.csv(file="sigtab_UG_D0D1sub_manual_edits.csv", header=TRUE, sep=',', check.names=FALSE) %>% 
+  rename("OTUID" = 1)
+
+#join the tables (phyllosphere)
+table_sig_phyllo_relabund <- left_join(table_sig_phyllo, table_relabund, by="OTUID")
+write.csv(table_sig_phyllo_relabund, "table_sig_phyllo_relabund.csv")
+
+#join the tables (ferment)
+table_sig_phyllo_relabund <- left_join(table_sig_phyllo, table_relabund, by="OTUID")
+write.csv(table_sig_phyllo_relabund, "table_sig_phyllo_relabund.csv")
+
+
+
+
+
+
+
+
+
+
+
+
 #==============================================================================================
 #Other comparisons not used in the manuscript
 #==============================================================================================

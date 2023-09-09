@@ -1,5 +1,5 @@
 #set working directory
-setwd("/Volumes/GoogleDrive/.shortcut-targets-by-id/1--pvx1vLSBijmxHMCZPrxKlyFBLp2jqF/Rick/cacao_combined/cacao_physeq_full_analysis/cacao_Fungal_ITS_ps")
+setwd("~/Library/CloudStorage/GoogleDrive-nn33@hawaii.edu/.shortcut-targets-by-id/1-4rD_zMa5xHszdH4D_WkYU9f6pwkT0Kq/cacao_combined/cacao_physeq_full_analysis/cacao_Fungal_ITS_ps")
 
 #load libraries
 library(tidyverse)
@@ -113,6 +113,14 @@ cacao_ITS_rare = rarefy_even_depth(cacao_ITS)
 #sum to make sure rarefy was successful
 total_depth_cacao_ITS_rare <- colSums((data.frame(otu_table(cacao_ITS_rare))))
 #View(total_depth_cacao_ITS_rare)
+
+#sum to make sure rarefy was successful
+total_depth_cacao_ITS_rare <- colSums((data.frame(otu_table(cacao_ITS_rare))))
+# View(total_depth_cacao_ITS_rare)
+
+#calculate relative abundance
+cacao_ITS_relabund = transform_sample_counts(cacao_ITS_rare, function(x) x / sum(x) )
+write.csv(otu_table(cacao_ITS_relabund), "cacao_ITS_relabund.csv")
 
 #Making distance matrix
 cacao_ITS_rareBray <- phyloseq::distance(cacao_ITS_rare, method = "bray")

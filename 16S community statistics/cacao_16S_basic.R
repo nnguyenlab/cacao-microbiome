@@ -1,5 +1,5 @@
 #Set working directory
-setwd("/Volumes/GoogleDrive/.shortcut-targets-by-id/1--pvx1vLSBijmxHMCZPrxKlyFBLp2jqF/Rick/cacao_combined/cacao_physeq_full_analysis/cacao_16S_ps")
+setwd("~/Library/CloudStorage/GoogleDrive-nn33@hawaii.edu/.shortcut-targets-by-id/1-4rD_zMa5xHszdH4D_WkYU9f6pwkT0Kq/cacao_combined/cacao_physeq_full_analysis/cacao_16S_ps")
 
 #load libraries etc.
 library(tidyverse)
@@ -98,6 +98,11 @@ cacao_16S_rare = rarefy_even_depth((cacao_16S),rngseed = TRUE)
 total_depth_cacao_16S_rare <- colSums((data.frame(otu_table(cacao_16S_rare))))
 # View(total_depth_cacao_16S_rare)
 
+#calculate relative abundance
+cacao_16S_relabund = transform_sample_counts(cacao_16S_rare, function(x) x / sum(x) )
+write.csv(otu_table(cacao_16S_relabund), "cacao_16S_relabund.csv")
+
+#Build rarefaction curves
 # rel_cacao_16S_0 <- prune_samples(sample_sums(cacao_16S_sub2) >= 50, cacao_16S_sub)
 # rarecurve(t(otu_table(rel_cacao_16S_0)), step=50, cex=0.5)
 # View(data.frame(otu_table(rel_cacao_16S_0)))
@@ -361,4 +366,3 @@ ggsave("Figure1A-ordination.pdf", device="pdf", width=5, height=4)
 # conord3 <- capscale(con.dis ~Chlor, data.env, scannf = TRUE, distance = "bray")
 # plot(conord3)
 # 
-
